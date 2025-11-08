@@ -1,6 +1,6 @@
 from dataset import get_dataloaders
 
-train_loader, test_loader, num_classes = get_dataloaders()
+train_loader, val_loader, test_loader, num_classes = get_dataloaders()
 images, labels = next(iter(train_loader))
 
 print(f"Number of classes: {num_classes}")

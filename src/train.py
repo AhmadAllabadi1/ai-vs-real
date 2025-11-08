@@ -10,12 +10,13 @@ def main():
     print("Using device:", device)
 
     # Load data
-    train_loader, test_loader, num_classes = get_dataloaders()
+    train_loader, val_loader, test_loader, num_classes = get_dataloaders()
 
     # Init model, loss, optimizer, hyperparameters
 
     lr = 1e-3
-    epochs = 3
+    epochs = 1
+
     model = CNN(num_classes=num_classes).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr)
@@ -49,11 +50,39 @@ def main():
                 batch_acc = correct / total
                 print(f"  [Batch {batch_idx+1}/{len(train_loader)}] "
                     f"Loss: {batch_loss:.4f} | Acc: {batch_acc:.4f}")
-        
-        epoch_loss = running_loss / total
-        epoch_acc = correct / total
-        print(f"Epoch {epoch+1}/{epochs} | "
-              f"Loss: {epoch_loss:.4f} | Acc: {epoch_acc:.4f}")
+                
+
+        train_loss = running_loss / total
+        train_acc = correct / total
+
+        # -------- Validation after each epoch --------
+        model.eval()
+        val_loss = 0.0
+        val_correct = 0
+        val_total = 0
+
+        with torch.no_grad():
+            for images, labels in val_loader:
+                images = images.to(device)
+                labels = labels.to(device)
+
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+
+                val_loss += loss.item() * images.size(0)
+                _, preds = torch.max(outputs, 1)
+                val_total += labels.size(0)
+                val_correct += (preds == labels).sum().item()
+
+        val_loss /= val_total
+        val_acc = val_correct / val_total
+
+        print(
+            f"Epoch {epoch+1}/{epochs} | "
+            f"Train Loss: {train_loss:.4f} | Train Acc: {train_acc:.4f} | "
+            f"Val Loss: {val_loss:.4f} | Val Acc: {val_acc:.4f}"
+        )
+
         
     # ----- Evaluate on Test Set -------- 
     model.eval()
