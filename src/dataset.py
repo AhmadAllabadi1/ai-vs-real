@@ -8,6 +8,7 @@ def get_dataloaders(
         batch_size=32,
         val_split=0.2,
 ):
+    torch.manual_seed(42)  # For reproducibility
     transform = transforms.Compose([
         transforms.ToTensor(), # Convert images to tensor
         transforms.Normalize(  # Normalize images
