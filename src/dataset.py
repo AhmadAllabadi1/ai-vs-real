@@ -8,35 +8,50 @@ def get_dataloaders(
         batch_size=32,
         val_split=0.2,
 ):
-    torch.manual_seed(42)  # For reproducibility
-    transform = transforms.Compose([
-        transforms.ToTensor(), # Convert images to tensor
-        transforms.Normalize(  # Normalize images
-            mean=(0.5,0.5,0.5), # RGB images
-            std=(0.5,0.5,0.5)
-        ),
+    torch.manual_seed(42)  # For reproducible split
+
+    # ----- Transforms -----
+    train_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomRotation(10),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.5, 0.5, 0.5),
+                             std=(0.5, 0.5, 0.5)),
     ])
 
-    full_train_data = datasets.ImageFolder(train_dir, transform=transform)
+    eval_transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.5, 0.5, 0.5),
+                             std=(0.5, 0.5, 0.5)),
+    ])
 
-    # Split into train and validation sets (80-20 split)
-    num_train = len(full_train_data)
+    # Base dataset just to get consistent indexing / targets
+    base_train = datasets.ImageFolder(train_dir)
+
+    num_train = len(base_train)
     indices = torch.randperm(num_train)
     split = int(num_train * (1 - val_split))
 
     train_idx = indices[:split]
     val_idx = indices[split:]
 
-    train_data = Subset(full_train_data, train_idx)
-    val_data = Subset(full_train_data, val_idx)
+    # Apply different transforms for train and val using Subset wrappers
+    train_data_full = datasets.ImageFolder(train_dir, transform=train_transform)
+    val_data_full = datasets.ImageFolder(train_dir, transform=eval_transform)
 
-    test_data = datasets.ImageFolder(test_dir, transform=transform)
+    train_data = Subset(train_data_full, train_idx)
+    val_data = Subset(val_data_full, val_idx)
+
+    # Test set (no augmentation)
+    test_data = datasets.ImageFolder(test_dir, transform=eval_transform)
 
     train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False) #Avoid shuffling for determinsm
+    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
 
-    classes = full_train_data.classes
+    classes = base_train.classes
     num_classes = len(classes)
 
     print("Classes:", classes)
