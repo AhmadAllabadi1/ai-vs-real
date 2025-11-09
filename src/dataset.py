@@ -12,12 +12,13 @@ def get_dataloaders(
 
     # ----- Transforms -----
     train_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.RandomResizedCrop(224, scale=(0.8, 1.0)),
         transforms.RandomHorizontalFlip(p=0.5),
-        transforms.RandomRotation(10),
+        transforms.ColorJitter(0.1, 0.1, 0.1),
+        transforms.RandomRotation(5),
         transforms.ToTensor(),
         transforms.Normalize(mean=(0.5, 0.5, 0.5),
-                             std=(0.5, 0.5, 0.5)),
+                            std=(0.5, 0.5, 0.5)),
     ])
 
     eval_transform = transforms.Compose([

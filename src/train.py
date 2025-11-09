@@ -4,13 +4,22 @@ import torch.nn as nn
 import torch.optim as optim
 from model import CNN
 from metrics import eval_with_metrics
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 def train_cnn(train_loader, val_loader, test_loader, num_classes,
-              device, epochs=5, lr=1e-3, save_path="model_cnn.pth"):
+              device, epochs=5, lr=1e-3, weight_decay=1e-4, save_path="model_cnn.pth"):
 
     model = CNN(num_classes=num_classes).to(device)
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr)
+    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+
+    scheduler = ReduceLROnPlateau(
+        optimizer,
+        mode="max",
+        factor=0.5,
+        patience=2,
+        verbose=True,
+    )
 
     best_val_acc = 0.0
 
@@ -47,6 +56,7 @@ def train_cnn(train_loader, val_loader, test_loader, num_classes,
                 total += labels.size(0)
         val_acc = correct / total if total > 0 else 0.0
 
+        scheduler.step(val_acc)
         print(f"[Epoch {epoch+1}/{epochs}] "
               f"Train Loss {train_loss:.4f} | Train Acc {train_acc:.4f} | Val Acc {val_acc:.4f}")
 
