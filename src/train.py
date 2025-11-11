@@ -5,6 +5,7 @@ import torch.optim as optim
 from model import CNN
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
+from torch.amp import autocast, GradScaler
 
 
 def train_cnn(
@@ -19,6 +20,7 @@ def train_cnn(
     save_path="model_cnn.pth",
 ):
     model = CNN(num_classes=num_classes).to(device)
+    torch.backends.cudnn.benchmark = True
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
 
@@ -27,10 +29,10 @@ def train_cnn(
         mode="max",
         factor=0.5,
         patience=2,
-        verbose=True,
     )
 
     best_val_acc = 0.0
+    scaler = GradScaler('cuda')
 
     # histories for plotting
     train_loss_history = []
@@ -44,13 +46,15 @@ def train_cnn(
         correct, total, running_loss = 0, 0, 0.0
 
         for images, labels in train_loader:
-            images, labels = images.to(device), labels.to(device)
+            images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
 
             optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, labels)
-            loss.backward()
-            optimizer.step()
+            with torch.autocast('cuda'):
+                outputs = model(images)
+                loss = criterion(outputs, labels)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
 
             running_loss += loss.item() * labels.size(0)
             _, preds = outputs.max(1)
@@ -65,9 +69,10 @@ def train_cnn(
         correct, total, val_running_loss = 0, 0, 0.0
         with torch.no_grad():
             for images, labels in val_loader:
-                images, labels = images.to(device), labels.to(device)
-                outputs = model(images)
-                loss = criterion(outputs, labels)
+                images, labels = images.to(device, non_blocking=True), labels.to(device, non_blocking=True)
+                with torch.autocast('cuda'):
+                    outputs = model(images)
+                    loss = criterion(outputs, labels)
 
                 val_running_loss += loss.item() * labels.size(0)
                 _, preds = outputs.max(1)

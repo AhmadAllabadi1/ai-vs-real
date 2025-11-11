@@ -10,6 +10,7 @@ from plot import (
     plot_confusion_matrix,
     plot_roc_curves,
 )
+import time
 
 
 def main():
@@ -18,14 +19,21 @@ def main():
 
     train_loader, val_loader, test_loader, num_classes = get_dataloaders()
 
+    start = time.time()
     print("\n=== Baseline 1: Majority ===")
     maj_results = run_majority_baseline(train_loader, val_loader, test_loader)
+    end = time.time()
+    maj_time = end - start
 
+    start = time.time()
     print("\n=== Baseline 2: Logistic Regression ===")
     logreg_results = run_logreg_baseline(
         train_loader, val_loader, test_loader, num_classes, device, epochs=150, lr=1e-2
     )
+    end = time.time()
+    log_time = end - start
 
+    start = time.time()
     print("\n=== Main Model: CNN ===")
     cnn_results = train_cnn(
         train_loader,
@@ -37,6 +45,8 @@ def main():
         lr=1e-3,
         save_path="model_cnn.pth",
     )
+    end = time.time()
+    cnn_time = end - start
 
     # === Plots ===
     plot_accuracy(
@@ -63,9 +73,9 @@ def main():
     )
 
     print("\n=== Summary ===")
-    print(f"Majority Baseline:  Val {maj_results['val']:.4f} | Test {maj_results['test']:.4f}")
-    print(f"LogReg Baseline:    Val {logreg_results['val']:.4f} | Test {logreg_results['test']:.4f}")
-    print(f"CNN Model:          Val {cnn_results['val_acc']:.4f} | Test {cnn_results['test_acc']:.4f}")
+    print(f"Majority Baseline:  Val {maj_results['val']:.4f} | Test {maj_results['test']:.4f} | Time {maj_time:.4f} seconds")
+    print(f"LogReg Baseline:    Val {logreg_results['val']:.4f} | Test {logreg_results['test']:.4f} | Time {log_time:.4f} seconds")
+    print(f"CNN Model:          Val {cnn_results['val_acc']:.4f} | Test {cnn_results['test_acc']:.4f} | Time {cnn_time:.4f} seconds")
 
 if __name__ == "__main__":
     main()

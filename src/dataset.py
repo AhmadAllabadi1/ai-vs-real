@@ -5,8 +5,9 @@ from torch.utils.data import DataLoader, Subset
 def get_dataloaders(
         train_dir='data/train',
         test_dir='data/test',
-        batch_size=32,
+        batch_size=64,
         val_split=0.2,
+        num_workers=8,
 ):
     torch.manual_seed(42)  # For reproducible split
 
@@ -48,9 +49,37 @@ def get_dataloaders(
     # Test set (no augmentation)
     test_data = datasets.ImageFolder(test_dir, transform=eval_transform)
 
-    train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
-    val_loader = DataLoader(val_data, batch_size=batch_size, shuffle=False)
-    test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False)
+    train_loader = DataLoader(
+        train_data, 
+        batch_size=batch_size, 
+        shuffle=True,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=True if num_workers > 0 else False,
+        prefetch_factor=2 if num_workers > 0 else None
+    )
+    
+    val_loader = DataLoader(
+        val_data, 
+        batch_size=batch_size * 2,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=True if num_workers > 0 else False,
+        prefetch_factor=2 if num_workers > 0 else None
+    )
+    
+    test_loader = DataLoader(
+        test_data, 
+        batch_size=batch_size * 2,
+        shuffle=False,
+        num_workers=num_workers,
+        pin_memory=True,
+        persistent_workers=True if num_workers > 0 else False,
+        prefetch_factor=2 if num_workers > 0 else None
+    )
+    classes = base_train.classes
+    num_classes = len(classes)
 
     classes = base_train.classes
     num_classes = len(classes)
