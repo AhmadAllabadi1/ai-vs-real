@@ -3,7 +3,7 @@ import torch
 from dataset import get_dataloaders
 from baselines.majority import run_majority_baseline
 from baselines.logreg import run_logreg_baseline
-from train import train_cnn
+from train import train_model
 from plot import (
     plot_accuracy,
     plot_loss,
@@ -18,7 +18,7 @@ def main():
     print("Using device:", device)
 
     train_loader, val_loader, test_loader, num_classes = get_dataloaders()
-
+    """
     start = time.time()
     print("\n=== Baseline 1: Majority ===")
     maj_results = run_majority_baseline(train_loader, val_loader, test_loader)
@@ -32,10 +32,10 @@ def main():
     )
     end = time.time()
     log_time = end - start
-
+    """
     start = time.time()
-    print("\n=== Main Model: CNN ===")
-    cnn_results = train_cnn(
+    print("\n=== Main Model: ===")
+    model_results = train_model(
         train_loader,
         val_loader,
         test_loader,
@@ -43,39 +43,39 @@ def main():
         device,
         epochs=150,
         lr=1e-3,
-        save_path="model_cnn.pth",
+        save_path="model.pth",
     )
     end = time.time()
     cnn_time = end - start
 
     # === Plots ===
     plot_accuracy(
-        cnn_results["train_acc_history"],
-        cnn_results["val_acc_history"],
-        filename="cnn_accuracy.png",
+        model_results["train_acc_history"],
+        model_results["val_acc_history"],
+        filename="model_accuracy.png",
     )
 
     plot_loss(
-        cnn_results["train_loss_history"],
-        cnn_results["val_loss_history"],
-        filename="cnn_loss.png",
+        model_results["train_loss_history"],
+        model_results["val_loss_history"],
+        filename="model_loss.png",
     )
 
     plot_confusion_matrix(
-        cnn_results["confusion_matrix"],
-        filename="cnn_confusion_matrix.png",
+        model_results["confusion_matrix"],
+        filename="model_confusion_matrix.png",
     )
 
     plot_roc_curves(
-        cnn_results["y_true"],
-        cnn_results["y_score"],
-        filename="cnn_roc.png",
+        model_results["y_true"],
+        model_results["y_score"],
+        filename="model_roc.png",
     )
 
     print("\n=== Summary ===")
-    print(f"Majority Baseline:  Val {maj_results['val']:.4f} | Test {maj_results['test']:.4f} | Time {maj_time:.4f} seconds")
-    print(f"LogReg Baseline:    Val {logreg_results['val']:.4f} | Test {logreg_results['test']:.4f} | Time {log_time:.4f} seconds")
-    print(f"CNN Model:          Val {cnn_results['val_acc']:.4f} | Test {cnn_results['test_acc']:.4f} | Time {cnn_time:.4f} seconds")
+    #print(f"Majority Baseline:  Val {maj_results['val']:.4f} | Test {maj_results['test']:.4f} | Time {maj_time:.4f} seconds")
+    #print(f"LogReg Baseline:    Val {logreg_results['val']:.4f} | Test {logreg_results['test']:.4f} | Time {log_time:.4f} seconds")
+    print(f"Model:          Val {model_results['val_acc']:.4f} | Test {model_results['test_acc']:.4f} | Time {cnn_time:.4f} seconds")
 
 if __name__ == "__main__":
     main()

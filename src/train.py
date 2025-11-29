@@ -2,13 +2,13 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from model import CNN
+from model import CNNViTHybrid
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 from torch.amp import autocast, GradScaler
 
 
-def train_cnn(
+def train_model(
     train_loader,
     val_loader,
     test_loader,
@@ -17,9 +17,9 @@ def train_cnn(
     epochs=5,
     lr=1e-3,
     weight_decay=1e-4,
-    save_path="model_cnn.pth",
+    save_path="model.pth",
 ):
-    model = CNN(num_classes=num_classes).to(device)
+    model = CNNViTHybrid(num_classes=num_classes).to(device)
     torch.backends.cudnn.benchmark = True
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
@@ -127,7 +127,7 @@ def train_cnn(
     )
     test_cm = confusion_matrix(all_labels, preds)
 
-    print("\n=== CNN Test Metrics ===")
+    print("\n=== Model Test Metrics ===")
     print(f"Test Acc:      {test_acc:.4f}")
     print(f"Test Precision:{test_prec:.4f}")
     print(f"Test Recall:   {test_rec:.4f}")
