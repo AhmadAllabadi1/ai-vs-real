@@ -50,18 +50,22 @@ class CNNViTHybrid(nn.Module):
         super().__init__()
         self.features = nn.Sequential(
             nn.Conv2d(3, 16, 3, padding=1),
+            nn.BatchNorm2d(16),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
 
             nn.Conv2d(16, 32, 3, padding=1),
+            nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
 
             nn.Conv2d(32, 64, 3, padding=1),
+            nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
 
             nn.Conv2d(64, 128, 3, padding=1),
+            nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(2, 2),
         )
@@ -88,8 +92,11 @@ class CNNViTHybrid(nn.Module):
 
         #Classification head from [CLS]
         self.mlp_head = nn.Sequential(
-            nn.LayerNorm(embed_dim),
-            nn.Linear(embed_dim, num_classes),
+            nn.LayerNorm(self.embed_dim),
+            nn.Linear(self.embed_dim, 256),
+            nn.GELU(),
+            nn.Dropout(0.2),
+            nn.Linear(256, num_classes),
         )
 
         self._init_weights()

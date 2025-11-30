@@ -41,7 +41,7 @@ def main():
         test_loader,
         num_classes,
         device,
-        epochs=150,
+        epochs=80,
         lr=1e-3,
         save_path="model.pth",
     )

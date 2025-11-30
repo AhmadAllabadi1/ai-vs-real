@@ -22,7 +22,7 @@ def train_model(
     model = CNNViTHybrid(num_classes=num_classes).to(device)
     torch.backends.cudnn.benchmark = True
     criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
+    optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
     scheduler = ReduceLROnPlateau(
         optimizer,
