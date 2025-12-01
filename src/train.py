@@ -6,6 +6,7 @@ from model import CNNViTHybrid
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from sklearn.metrics import precision_recall_fscore_support, confusion_matrix
 from torch.amp import autocast, GradScaler
+from torch.optim.lr_scheduler import CosineAnnealingLR
 
 
 def train_model(
@@ -21,16 +22,17 @@ def train_model(
 ):
     model = CNNViTHybrid(num_classes=num_classes).to(device)
     torch.backends.cudnn.benchmark = True
-    criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
-
+    """
     scheduler = ReduceLROnPlateau(
         optimizer,
         mode="max",
         factor=0.5,
         patience=2,
     )
-
+    """
+    scheduler = CosineAnnealingLR(optimizer, T_max=epochs)
     best_val_acc = 0.0
     scaler = GradScaler('cuda')
 
@@ -53,6 +55,10 @@ def train_model(
                 outputs = model(images)
                 loss = criterion(outputs, labels)
             scaler.scale(loss).backward()
+
+            scaler.unscale_(optimizer)
+            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            
             scaler.step(optimizer)
             scaler.update()
 
@@ -88,7 +94,7 @@ def train_model(
         train_acc_history.append(train_acc)
         val_acc_history.append(val_acc)
 
-        scheduler.step(val_acc)
+        scheduler.step()
 
         print(
             f"[Epoch {epoch+1}/{epochs}] "
