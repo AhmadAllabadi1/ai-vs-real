@@ -35,7 +35,7 @@ class CNN(nn.Module):
         x = self.features(x)
         x = self.classifier(x)
         return x
-"""
+
 
 class CNNViTHybrid(nn.Module):
     def __init__(
@@ -131,4 +131,96 @@ class CNNViTHybrid(nn.Module):
         cls_out = x[:, 0]             
         logits = self.mlp_head(cls_out) 
 
+        return logits
+"""
+class CNNViTHybrid(nn.Module):
+    def __init__(
+        self,
+        num_classes: int = 2,
+        embed_dim: int = 192,  
+        num_heads: int = 4,
+        num_layers: int = 4,
+        mlp_ratio: int = 4,
+        dropout: float = 0.1,
+    ):
+        super().__init__()
+
+        self.features = nn.Sequential(
+            nn.Conv2d(3, 16, 3, padding=1),
+            nn.BatchNorm2d(16),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+
+            nn.Conv2d(16, 32, 3, padding=1),
+            nn.BatchNorm2d(32),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+
+            nn.Conv2d(32, 64, 3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+
+            nn.Conv2d(64, 128, 3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2),
+        )
+
+        self.embed_dim = embed_dim
+        self.num_patches = 14 * 14
+
+
+        self.proj = nn.Conv2d(128, embed_dim, kernel_size=1)
+
+
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, embed_dim))
+        self.pos_embed = nn.Parameter(torch.zeros(1, 1 + self.num_patches, embed_dim))
+        self.pos_drop = nn.Dropout(dropout)
+
+
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=embed_dim,
+            nhead=num_heads,
+            dim_feedforward=embed_dim * mlp_ratio,
+            dropout=dropout,
+            batch_first=True,
+        )
+        self.transformer = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=num_layers,
+        )
+
+
+        self.mlp_head = nn.Sequential(
+            nn.LayerNorm(self.embed_dim),
+            nn.Linear(self.embed_dim, 256),
+            nn.GELU(),
+            nn.Dropout(0.2),
+            nn.Linear(256, num_classes),
+        )
+
+        self._init_weights()
+
+    def _init_weights(self):
+        nn.init.normal_(self.cls_token, std=0.02)
+        nn.init.normal_(self.pos_embed, std=0.02)
+        for m in self.mlp_head:
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
+
+    def forward(self, x):
+        B = x.size(0)
+        x = self.features(x)
+        x = self.proj(x)
+        x = x.flatten(2).transpose(1, 2)
+        cls_tokens = self.cls_token.expand(B, 1, self.embed_dim)
+        x = torch.cat((cls_tokens, x), dim=1)
+        x = x + self.pos_embed[:, : x.size(1), :]
+        x = self.pos_drop(x)
+        x = self.transformer(x)
+        cls_out = x[:, 0]
+        logits = self.mlp_head(cls_out)
         return logits
