@@ -18,7 +18,7 @@ def main():
     print("Using device:", device)
 
     train_loader, val_loader, test_loader, num_classes = get_dataloaders()
-    """
+
     start = time.time()
     print("\n=== Baseline 1: Majority ===")
     maj_results = run_majority_baseline(train_loader, val_loader, test_loader)
@@ -32,7 +32,7 @@ def main():
     )
     end = time.time()
     log_time = end - start
-    """
+
     start = time.time()
     print("\n=== Main Model: ===")
     model_results = train_model(
@@ -73,8 +73,8 @@ def main():
     )
 
     print("\n=== Summary ===")
-    #print(f"Majority Baseline:  Val {maj_results['val']:.4f} | Test {maj_results['test']:.4f} | Time {maj_time:.4f} seconds")
-    #print(f"LogReg Baseline:    Val {logreg_results['val']:.4f} | Test {logreg_results['test']:.4f} | Time {log_time:.4f} seconds")
+    print(f"Majority Baseline:  Val {maj_results['val']:.4f} | Test {maj_results['test']:.4f} | Time {maj_time:.4f} seconds")
+    print(f"LogReg Baseline:    Val {logreg_results['val']:.4f} | Test {logreg_results['test']:.4f} | Time {log_time:.4f} seconds")
     print(f"Model:          Val {model_results['val_acc']:.4f} | Test {model_results['test_acc']:.4f} | Time {cnn_time:.4f} seconds")
 
 if __name__ == "__main__":
