@@ -5,6 +5,12 @@ from baselines.majority import run_majority_baseline
 from baselines.logreg import run_logreg_baseline
 from train import train_cnn
 import time
+from plot import (
+    plot_accuracy,
+    plot_loss,
+    plot_confusion_matrix,
+    plot_roc_curves,
+)
 
 def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -35,12 +41,35 @@ def main():
         test_loader,
         num_classes,
         device,
-        epochs=150,
-        lr=1e-3,
+        epochs=120,
+        lr=3e-4,
         save_path="model_cnn.pth",
     )
     end = time.time()
     cnn_time = end - start
+
+    plot_accuracy(
+        cnn_results["train_acc_history"],
+        cnn_results["val_acc_history"],
+        filename="cnn8model_accuracy.png",
+    )
+
+    plot_loss(
+        cnn_results["train_loss_history"],
+        cnn_results["val_loss_history"],
+        filename="cnn8model_loss.png",
+    )
+
+    plot_confusion_matrix(
+        cnn_results["confusion_matrix"],
+        filename="cnn8model_confusion_matrix.png",
+    )
+
+    plot_roc_curves(
+        cnn_results["y_true"],
+        cnn_results["y_score"],
+        filename="cnn8model_roc.png",
+    )
 
     print("\n=== Summary ===")
     '''
